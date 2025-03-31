@@ -1,16 +1,21 @@
-<!-- Key Generation -->
-<button (click)="generateKeys()">Generate Keys</button>
-<button (click)="saveKeys()">Save Keys</button>
-<p>Public Key: {{ publicKey }}</p>
-<p>Private Key: {{ privateKey }}</p>
+<div class="container">
+    <!-- Key Generation -->
+    <h2>RSA Key Generation</h2>
+    <button (click)="generateKeys()">Generate Keys</button>
+    <button (click)="saveKeys()">Save Keys</button>
+    <p><strong>Public Key:</strong> {{ publicKey }}</p>
+    <p><strong>Private Key:</strong> {{ privateKey }}</p>
 
-<!-- Encryption -->
-<input type="text" [(ngModel)]="message" placeholder="Enter message">
-<button (click)="encryptMessage()">Encrypt</button>
-<button (click)="saveEncrypted()">Save Encrypted</button>
-<p>Encrypted: {{ encryptedText }}</p>
+    <!-- Encryption -->
+    <h2>Encryption</h2>
+    <input type="text" [(ngModel)]="message" placeholder="Enter message">
+    <button (click)="encryptMessage()">Encrypt</button>
+    <button (click)="saveEncrypted()">Save Encrypted</button>
+    <p><strong>Encrypted:</strong> {{ encryptedText }}</p>
 
-<!-- Decryption -->
-<button (click)="decryptMessage()">Decrypt</button>
-<button (click)="saveDecrypted()">Save Decrypted</button>
-<p>Decrypted: {{ decryptedText }}</p>
+    <!-- Decryption -->
+    <h2>Decryption</h2>
+    <button (click)="decryptMessage()">Decrypt</button>
+    <button (click)="saveDecrypted()">Save Decrypted</button>
+    <p><strong>Decrypted:</strong> {{ decryptedText }}</p>
+</div>
