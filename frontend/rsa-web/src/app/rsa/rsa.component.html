@@ -1,0 +1,16 @@
+<!-- Key Generation -->
+<button (click)="generateKeys()">Generate Keys</button>
+<button (click)="saveKeys()">Save Keys</button>
+<p>Public Key: {{ publicKey }}</p>
+<p>Private Key: {{ privateKey }}</p>
+
+<!-- Encryption -->
+<input type="text" [(ngModel)]="message" placeholder="Enter message">
+<button (click)="encryptMessage()">Encrypt</button>
+<button (click)="saveEncrypted()">Save Encrypted</button>
+<p>Encrypted: {{ encryptedText }}</p>
+
+<!-- Decryption -->
+<button (click)="decryptMessage()">Decrypt</button>
+<button (click)="saveDecrypted()">Save Decrypted</button>
+<p>Decrypted: {{ decryptedText }}</p>
