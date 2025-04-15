@@ -1,153 +1,145 @@
-import logging
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-import json
-from pathlib import Path
-from rsa_utils import generate_keys, encrypt, decrypt
+from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
+from typing import List
+import random, hashlib, json, logging
+from pathlib import Path
+from models import * 
+from rsa_core import *
+from elgamal_core import *
+from dsa_core import *
 
 # Set up logging
-log_file_path = "logs/app_operations.log"  # Specify the log file path
-logging.basicConfig(
-    filename=log_file_path,
-    level=logging.INFO, 
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    filemode='a'  # Open the log file in append mode (default is 'a')
-)
-logger = logging.getLogger(__name__)
+LOG_DIR = Path("logs")
+LOG_DIR.mkdir(exist_ok=True)
+logging.basicConfig(filename=LOG_DIR / "rsa.log", level=logging.INFO, format="%(asctime)s - %(message)s")
+
+# Directories
+KEY_DIR = Path("keys")
+KEY_DIR.mkdir(exist_ok=True)
+SIG_DIR = Path("signatures")
+SIG_DIR.mkdir(exist_ok=True)
+
 
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:4200"],  # Angular frontend URL
-    allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, OPTIONS, etc.)
-    allow_headers=["*"],  # Allow all headers
-)
+@app.post("/rsa/generate-keys")
+def generate_keys(req: KeyGenRequest):
+    public_key, private_key = generate_rsa_keys(req.bits)
+    logging.info("Keys generated")
+    return {
+        "public_key": [str(public_key[0]), str(public_key[1])],
+        "private_key": [str(private_key[0]), str(private_key[1])]
+    }
+    
+@app.post("/rsa/encrypt")
+def encrypt(req: EncryptRequest):
+    result = rsa_encrypt(req.message, tuple(req.public_key))
+    result_str = [str(x) for x in result]  # <-- Convert each int to string
+    logging.info("Message encrypted")
+    return {"ciphertext": result_str}
 
-# Directories for saving files
-KEYS_DIR = Path("keys/")
-ENCRYPTED_DIR = Path("encrypted/")
-DECRYPTED_DIR = Path("decrypted/")
+@app.post("/rsa/decrypt")
+def decrypt(req: DecryptRequest):
+    result = rsa_decrypt(req.ciphertext, tuple(req.private_key))
+    logging.info("Message decrypted")
+    return {"message": str(result)}
 
-for directory in [KEYS_DIR, ENCRYPTED_DIR, DECRYPTED_DIR]:
-    directory.mkdir(exist_ok=True)
+@app.post("/rsa/sign")
+def sign(req: SignRequest):
+    sig = rsa_sign(req.message, tuple(req.private_key), req.hash_algorithm)
+    logging.info("Message signed")
+    return {"signature": str(sig)}  # return as string to preserve precision
 
-def int_list_to_ascii_string(int_list):
-    """Convert list of integers to an ASCII string."""
-    return "".join(chr(i) for i in int_list)
-
-def ascii_string_to_int_list(text):
-    """Convert ASCII string to a list of integers."""
-    return [ord(c) for c in text]
-
-
-@app.post("/generate-keys")
-def generate_keys_endpoint():
-    logger.info("Generating keys...")
-    public_key, private_key = generate_keys()
-    logger.info("Keys generated successfully.")
-    return {"public_key": json.dumps(public_key), "private_key": json.dumps(private_key)}
-
-
-class EncryptRequest(BaseModel):
-    message: str
-
-class DecryptRequest(BaseModel):
-    ciphertext: str
-
-@app.post("/encrypt")
-def encrypt_message(request: EncryptRequest):
-    logger.info("Starting encryption process...")
-
-    public_key_path = KEYS_DIR / "public_key.json"
-    if not public_key_path.exists():
-        logger.error("Public key not found.")
-        raise HTTPException(status_code=400, detail="Public key not found.")
-
-    with open(public_key_path, "r") as f:
-        public_key = json.load(f)
-
-    encrypted_data = encrypt(request.message, public_key)
-
-    # Convert integer list to ASCII string
-    encrypted_text = int_list_to_ascii_string(encrypted_data)
-
-    logger.info("Encryption successful.")
-    return {"ciphertext": encrypted_text}
-
-
-@app.post("/decrypt")
-def decrypt_message(request: DecryptRequest):
-    logger.info("Starting decryption process...")
-
-    private_key_path = KEYS_DIR / "private_key.json"
-
-    if not private_key_path.exists():
-        logger.error("Private key not found.")
-        raise HTTPException(status_code=400, detail="Private key not found.")
-
-    with open(private_key_path, "r") as f:
-        private_key = json.load(f)
-
-    # Convert ASCII string back to integer list
-    encrypted_list = ascii_string_to_int_list(request.ciphertext)
-
-    decrypted_text = decrypt(encrypted_list, private_key)
-
-    logger.info("Decryption successful.")
-    return {"message": decrypted_text}
-
-
-class SaveKeysRequest(BaseModel):
-    publicKey: str
-    privateKey: str
+@app.post("/rsa/verify")
+def verify(req: VerifyRequest):
+    sig_int = int(req.signature)  # convert back to int
+    valid = rsa_verify(req.message, sig_int, tuple(req.public_key), req.hash_algorithm)
+    logging.info("Signature verified: %s", "valid" if valid else "invalid")
+    return {"valid": valid}
 
 @app.post("/save-keys")
-def save_keys(request: SaveKeysRequest):
-    logger.info("Saving keys...")
+def save_keys(public_key: List[int], private_key: List[int]):
+    with open(KEY_DIR / "rsa_keys.json", "w") as f:
+        json.dump({"public_key": public_key, "private_key": private_key}, f)
+    logging.info("Keys saved to file")
+    return {"status": "saved"}
 
-    public_key_path = KEYS_DIR / "public_key.json"
-    private_key_path = KEYS_DIR / "private_key.json"
-
-    with open(public_key_path, "w") as f:
-        f.write(request.publicKey)
-
-    with open(private_key_path, "w") as f:
-        f.write(request.privateKey)
-
-    logger.info("Keys saved successfully.")
-    return {"message": "Keys saved successfully."}
+@app.post("/save-signature")
+def save_signature(signature: int):
+    with open(SIG_DIR / "signature.json", "w") as f:
+        json.dump({"signature": signature}, f)
+    logging.info("Signature saved to file")
+    return {"status": "saved"}
 
 
-class SaveEncryptedRequest(BaseModel):
-    ciphertext: str
+@app.post("/elgamal/generate-keys")
+def generate_keys(req: ElGamalKeyGenRequest):
+    pub, priv = generate_elgamal_keys(req.bits)
+    return {
+        "public_key": [str(pub[0]), str(pub[1]), str(pub[2])],
+        "private_key": [str(priv[0]), str(priv[1])]
+    }
 
-@app.post("/save-encrypted")
-def save_encrypted(request: SaveEncryptedRequest):
-    logger.info("Saving encrypted text...")
+@app.post("/elgamal/encrypt")
+def encrypt(req: ElGamalEncryptRequest):
+    if len(req.public_key) != 3:
+        raise HTTPException(status_code=400, detail="Public key must be [p, g, y]")
+    
+    # Convert public key to integers
+    p, g, y = map(int, req.public_key)
+    a, b_list = elgamal_encrypt(req.message, (p, g, y))
 
-    encrypted_file = ENCRYPTED_DIR / "encrypted.txt"
-
-    with open(encrypted_file, "w", encoding="utf-8") as f:  # Explicitly set encoding
-        f.write(request.ciphertext)
-
-    logger.info(f"Encrypted text saved to {encrypted_file}.")
-    return {"message": "Encrypted text saved successfully.", "file_path": str(encrypted_file)}
+    # Convert large integers to string to avoid scientific notation
+    return {
+        "a": str(a),
+        "b_list": [str(b) for b in b_list]
+    }
 
 
-class SaveDecryptedRequest(BaseModel):
-    decryptedText: str
+@app.post("/elgamal/decrypt")
+def decrypt(req: ElGamalDecryptRequest):
+    a = int(req.a)
+    b_list = [int(b) for b in req.b_list]
+    message = elgamal_decrypt(a, b_list, tuple(req.private_key))
+    return {"message": message}
 
-@app.post("/save-decrypted")
-def save_decrypted(request: SaveDecryptedRequest):
-    logger.info("Saving decrypted text...")
+@app.post("/elgamal/sign")
+def sign(req: ElGamalSignRequest):
+    r, s = elgamal_sign(req.message, tuple(req.private_key), req.hash_algorithm)
+    return {
+        "signature": [str(r), str(s)]
+    }
 
-    decrypted_file = DECRYPTED_DIR / "decrypted.txt"
+@app.post("/elgamal/verify")
+def verify(req: ElGamalVerifyRequest):
+    r, s = map(int, req.signature)
+    valid = elgamal_verify(
+        req.message,
+        (r, s),
+        tuple(req.public_key),
+        req.hash_algorithm
+    )
+    return {"valid": valid}
 
-    with open(decrypted_file, "w") as f:
-        f.write(request.decryptedText)
 
-    logger.info(f"Decrypted text saved to {decrypted_file}.")
-    return {"message": "Decrypted text saved successfully.", "file_path": str(decrypted_file)}
+@app.post("/dsa/generate-keys")
+def generate_keys(req: DSAKeyGenRequest):
+    pub, priv = generate_dsa_keys(req.L, req.N)
+    return {
+    "public_key": [str(x) for x in pub],
+    "private_key": [str(x) for x in priv]
+}
+
+@app.post("/dsa/sign")
+def sign(req: DSASignRequest):
+    signature = dsa_sign(req.message, tuple(req.private_key), req.hash_algorithm)
+    r, s = signature
+    return {"signature": [str(r), str(s)]}
+
+@app.post("/dsa/verify")
+def verify(req: DSAVerifyRequest):
+    signature = tuple(int(x) for x in req.signature)
+    public_key = tuple(int(x) for x in req.public_key)
+    is_valid = dsa_verify(req.message, signature, public_key, req.hash_algorithm)
+
+    return {"valid": is_valid}
