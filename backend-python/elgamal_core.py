@@ -74,6 +74,7 @@ def generate_elgamal_keys(bits=512) -> Tuple[Tuple[int, int, int], Tuple[int, in
     p = generate_large_prime(bits)
     g = random.randint(2, p - 2)
     x = random.randint(2, p - 2)  # private key
+    g = 2
     y = pow(g, x, p)  # public key
     public_key = (p, g, y)
     private_key = (x, p)
@@ -96,26 +97,32 @@ def elgamal_decrypt(a: int, b_list: list[int], private_key: Tuple[int, int]):
 
 def elgamal_sign(message: str, private_key: Tuple[int, int], hash_algo="SHA-256"):
     x, p = private_key
-    g = 2
-    h = hash_message(message, hash_algo)
+    g = 2  # should match the g used during key generation
+    h = hash_message(message, hash_algo) % (p - 1)  # reduce hash mod (p - 1)
+
     while True:
         k = random.randint(2, p - 2)
         if gcd(k, p - 1) == 1:
             break
+
     r = pow(g, k, p)
     k_inv = mod_inverse(k, p - 1)
-    s = (k_inv * (h - x * r)) % (p - 1)
+    s = (k_inv * ((h - x * r) % (p - 1))) % (p - 1)
+    
     return (r, s)
+
 
 def elgamal_verify(message: str, signature: Tuple[int, int], public_key: Tuple[int, int, int], hash_algo="SHA-256"):
     p, g, y = public_key
     r, s = signature
 
-    # Signature range check
+    g = 2
+    
     if not (0 < r < p) or not (0 < s < p):
         return False
 
-    h = hash_message(message, hash_algo)
+    h = hash_message(message, hash_algo) % (p - 1)
+
     v1 = (pow(y, r, p) * pow(r, s, p)) % p
     v2 = pow(g, h, p)
 

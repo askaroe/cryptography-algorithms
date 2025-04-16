@@ -1,0 +1,126 @@
+<h2>Cryptography Application</h2>
+
+<!-- Algorithm Selection -->
+<label>Select Algorithm:</label>
+<select [(ngModel)]="selectedAlgorithm">
+  <option value="rsa">RSA</option>
+  <option value="elgamal">ElGamal</option>
+  <option value="dsa">DSA</option>
+</select>
+
+<hr>
+
+<!-- RSA Section -->
+<div *ngIf="selectedAlgorithm === 'rsa'">
+  <h3>RSA Operations</h3>
+
+  <button (click)="generateRSAKeys()">Generate RSA Keys</button>
+  <p>Public Key: {{ rsa.publicKey }}</p>
+  <p>Private Key: {{ rsa.privateKey }}</p>
+
+  <input [(ngModel)]="rsa.message" placeholder="Message to Encrypt">
+  <button (click)="rsaEncrypt()">Encrypt</button>
+  <p>Ciphertext: {{ rsa.ciphertext }}</p>
+
+  <!-- Decryption -->
+    <textarea [(ngModel)]="rsa.cipherInput" placeholder="Enter ciphertext as comma-separated values"></textarea>
+    <button (click)="rsaDecrypt()">Decrypt</button>
+    <p>Decrypted: {{ rsa.decrypted }}</p>
+
+
+  <select [(ngModel)]="rsa.hash">
+    <option value="SHA-256">SHA-256</option>
+    <option value="SHA-384">SHA-384</option>
+    <option value="SHA-512">SHA-512</option>
+  </select>
+  <button (click)="rsaSign()">Sign</button>
+  <p>Signature: {{ rsa.signature }}</p>
+
+    <textarea [(ngModel)]="rsa.signatureInput" placeholder="Enter signature here (number)"></textarea>
+    <textarea [(ngModel)]="rsa.publicKeyInput" placeholder="Enter public key as comma-separated integers"></textarea>
+    <button (click)="rsaVerify()">Verify</button>
+    <p>Signature Valid: {{ rsa.valid }}</p>
+
+    <!-- RSA Keys -->
+    <button (click)="saveToFile('rsa_public_key.txt', rsa.publicKey.join(','))">Save Public Key</button>
+    <button (click)="saveToFile('rsa_private_key.txt', rsa.privateKey.join(','))">Save Private Key</button>
+
+    <!-- RSA Cipher -->
+    <button (click)="saveToFile('rsa_ciphertext.txt', rsa.ciphertext.join(','))">Save Ciphertext</button>
+
+    <!-- RSA Signature -->
+    <button (click)="saveToFile('rsa_signature.txt', rsa.signature)">Save Signature</button>
+
+</div>
+
+<!-- ElGamal Section -->
+<div *ngIf="selectedAlgorithm === 'elgamal'">
+  <h3>ElGamal Operations</h3>
+
+  <button (click)="generateElGamalKeys()">Generate ElGamal Keys</button>
+  <p>Public Key: {{ elgamal.publicKey }}</p>
+  <p>Private Key: {{ elgamal.privateKey }}</p>
+
+  <input [(ngModel)]="elgamal.message" placeholder="Message to Encrypt">
+  <button (click)="elgamalEncrypt()">Encrypt</button>
+  <p>A: {{ elgamal.a }}</p>
+  <p>B List: {{ elgamal.bList }}</p>
+
+  <!-- Manual Cipher Input for Decryption -->
+    <textarea [(ngModel)]="elgamal.cipherAInput" placeholder="Enter 'a' value"></textarea>
+    <textarea [(ngModel)]="elgamal.cipherBInput" placeholder="Enter b_list as comma-separated values"></textarea>
+    <button (click)="elgamalDecrypt()">Decrypt</button>
+    <p>Decrypted: {{ elgamal.decrypted }}</p>
+
+  <select [(ngModel)]="elgamal.hash">
+    <option value="SHA-256">SHA-256</option>
+    <option value="SHA-384">SHA-384</option>
+    <option value="SHA-512">SHA-512</option>
+  </select>
+  <button (click)="elgamalSign()">Sign</button>
+  <p>Signature: {{ elgamal.signature }}</p>
+
+    <!-- Manual Signature Verification -->
+    <textarea [(ngModel)]="elgamal.signatureInput" placeholder="Enter signature as r,s"></textarea>
+    <textarea [(ngModel)]="elgamal.publicKeyInput" placeholder="Enter public key as p,g,y"></textarea>
+    <button (click)="elgamalVerify()">Verify</button>
+    <p>Signature Valid: {{ elgamal.valid }}</p>
+
+    <!-- ElGamal Keys -->
+    <button (click)="saveToFile('elgamal_public_key.txt', elgamal.publicKey.join(','))">Save Public Key</button>
+    <button (click)="saveToFile('elgamal_private_key.txt', elgamal.privateKey.join(','))">Save Private Key</button>
+
+
+    <!-- ElGamal Signature -->
+    <button (click)="saveToFile('elgamal_signature.txt', elgamal.signature.join(','))">Save Signature</button>
+
+</div>
+
+<!-- DSA Section -->
+<div *ngIf="selectedAlgorithm === 'dsa'">
+  <h3>DSA Operations</h3>
+
+  <button (click)="generateDSAKeys()">Generate DSA Keys</button>
+  <p>Public Key: {{ dsa.publicKey }}</p>
+  <p>Private Key: {{ dsa.privateKey }}</p>
+
+  <input [(ngModel)]="dsa.message" placeholder="Message to Sign">
+  <select [(ngModel)]="dsa.hash">
+    <option value="SHA-256">SHA-256</option>
+    <option value="SHA-384">SHA-384</option>
+    <option value="SHA-512">SHA-512</option>
+  </select>
+  <button (click)="dsaSign()">Sign</button>
+  <p>Signature: {{ dsa.signature }}</p>
+
+  <button (click)="dsaVerify()">Verify</button>
+  <p>Signature Valid: {{ dsa.valid }}</p>
+
+    <!-- DSA Keys -->
+    <button (click)="saveToFile('dsa_public_key.txt', dsa.publicKey.join(','))">Save Public Key</button>
+    <button (click)="saveToFile('dsa_private_key.txt', dsa.privateKey.join(','))">Save Private Key</button>
+
+    <!-- DSA Signature -->  
+    <button (click)="saveToFile('dsa_signature.txt', dsa.signature.join(','))">Save Signature</button>
+
+</div>

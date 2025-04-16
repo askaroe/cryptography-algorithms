@@ -45,7 +45,6 @@ def generate_dsa_keys(L=512, N=160):
         g = pow(h, (p - 1) // q, p)
         if g > 1:
             break
-
     x = random.randint(1, q - 1)  # Private key
     y = pow(g, x, p)             # Public key
 
@@ -71,7 +70,6 @@ def dsa_sign(message: str, private_key, hash_algo="SHA-256"):
 def dsa_verify(message: str, signature, public_key, hash_algo="SHA-256") -> bool:
     r, s = signature
     p, q, g, y = public_key
-
     if not (0 < r < q and 0 < s < q):
         return False
 

@@ -7,6 +7,7 @@ from models import *
 from rsa_core import *
 from elgamal_core import *
 from dsa_core import *
+from fastapi.middleware.cors import CORSMiddleware
 
 # Set up logging
 LOG_DIR = Path("logs")
@@ -21,6 +22,14 @@ SIG_DIR.mkdir(exist_ok=True)
 
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"],  
+)
 
 @app.post("/rsa/generate-keys")
 def generate_keys(req: KeyGenRequest):

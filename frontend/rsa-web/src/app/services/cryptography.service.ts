@@ -2,77 +2,64 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class CryptographyService {
+@Injectable({ providedIn: 'root' })
+export class CryptoService {
+  private apiUrl = 'http://localhost:8000';
 
-  private apiUrl = 'http://localhost:8000'; // FastAPI server URL
+  constructor(private http: HttpClient) {}
 
-  constructor(private http: HttpClient) { }
-
-  // RSA key generation
-  generateRSAKeys(bits: number) {
+  // --- RSA ---
+  generateRSAKeys(bits: number): Observable<any> {
     return this.http.post(`${this.apiUrl}/rsa/generate-keys`, { bits });
   }
 
-  // RSA encryption
-  encryptRSA(message: string, publicKey: number[]) {
-    return this.http.post(`${this.apiUrl}/rsa/encrypt`, { message, public_key: publicKey });
+  rsaEncrypt(message: string, public_key: string[]): Observable<any> {
+    return this.http.post(`${this.apiUrl}/rsa/encrypt`, { message, public_key });
   }
 
-  // RSA decryption
-  decryptRSA(ciphertext: number[], privateKey: number[]) {
-    return this.http.post(`${this.apiUrl}/rsa/decrypt`, { ciphertext, private_key: privateKey });
+  rsaDecrypt(ciphertext: string[], private_key: string[]): Observable<any> {
+    return this.http.post(`${this.apiUrl}/rsa/decrypt`, { ciphertext, private_key });
   }
 
-  // RSA signature creation
-  signRSA(message: string, privateKey: number[], hashAlgorithm: string) {
-    return this.http.post(`${this.apiUrl}/rsa/sign`, { message, private_key: privateKey, hash_algorithm: hashAlgorithm });
+  rsaSign(message: string, private_key: string[], hash_algorithm: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/rsa/sign`, { message, private_key, hash_algorithm });
   }
 
-  // RSA signature verification
-  verifyRSA(message: string, signature: string, publicKey: number[], hashAlgorithm: string) {
-    return this.http.post(`${this.apiUrl}/rsa/verify`, { message, signature, public_key: publicKey, hash_algorithm: hashAlgorithm });
+  rsaVerify(message: string, signature: string, public_key: string[], hash_algorithm: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/rsa/verify`, { message, signature, public_key, hash_algorithm });
   }
 
-  // ElGamal key generation
-  generateElGamalKeys(bits: number) {
+  // --- ElGamal ---
+  generateElGamalKeys(bits: number): Observable<any> {
     return this.http.post(`${this.apiUrl}/elgamal/generate-keys`, { bits });
   }
 
-  // ElGamal encryption
-  encryptElGamal(message: string, publicKey: number[]) {
-    return this.http.post(`${this.apiUrl}/elgamal/encrypt`, { message, public_key: publicKey });
+  elgamalEncrypt(message: string, public_key: string[]): Observable<any> {
+    return this.http.post(`${this.apiUrl}/elgamal/encrypt`, { message, public_key });
   }
 
-  // ElGamal decryption
-  decryptElGamal(a: string, bList: string[], privateKey: number[]) {
-    return this.http.post(`${this.apiUrl}/elgamal/decrypt`, { a, b_list: bList, private_key: privateKey });
+  elgamalDecrypt(a: string, b_list: string[], private_key: string[]): Observable<any> {
+    return this.http.post(`${this.apiUrl}/elgamal/decrypt`, { a, b_list, private_key });
   }
 
-  // ElGamal signature creation
-  signElGamal(message: string, privateKey: number[], hashAlgorithm: string) {
-    return this.http.post(`${this.apiUrl}/elgamal/sign`, { message, private_key: privateKey, hash_algorithm: hashAlgorithm });
+  elgamalSign(message: string, private_key: string[], hash_algorithm: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/elgamal/sign`, { message, private_key, hash_algorithm });
   }
 
-  // ElGamal signature verification
-  verifyElGamal(message: string, signature: string[], publicKey: number[], hashAlgorithm: string) {
-    return this.http.post(`${this.apiUrl}/elgamal/verify`, { message, signature, public_key: publicKey, hash_algorithm: hashAlgorithm });
+  elgamalVerify(message: string, signature: string[], public_key: string[], hash_algorithm: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/elgamal/verify`, { message, signature, public_key, hash_algorithm });
   }
 
-  // DSA key generation
-  generateDSAKeys(L: number, N: number) {
+  // --- DSA ---
+  generateDSAKeys(L: number, N: number): Observable<any> {
     return this.http.post(`${this.apiUrl}/dsa/generate-keys`, { L, N });
   }
 
-  // DSA signature creation
-  signDSA(message: string, privateKey: number[], hashAlgorithm: string) {
-    return this.http.post(`${this.apiUrl}/dsa/sign`, { message, private_key: privateKey, hash_algorithm: hashAlgorithm });
+  dsaSign(message: string, private_key: string[], hash_algorithm: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/dsa/sign`, { message, private_key, hash_algorithm });
   }
 
-  // DSA signature verification
-  verifyDSA(message: string, signature: string[], publicKey: string[], hashAlgorithm: string) {
-    return this.http.post(`${this.apiUrl}/dsa/verify`, { message, signature, public_key: publicKey, hash_algorithm: hashAlgorithm });
+  dsaVerify(message: string, signature: string[], public_key: string[], hash_algorithm: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/dsa/verify`, { message, signature, public_key, hash_algorithm });
   }
 }
